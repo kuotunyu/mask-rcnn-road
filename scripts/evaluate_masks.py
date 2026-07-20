@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""比較 ground truth / prediction masks，輸出 class-wise IoU、Dice、Precision、Recall。"""
+"""比較 ground truth / prediction masks，輸出 class-wise IoU、Dice、Precision、Recall、F1。"""
 import argparse
 import json
 import sys
@@ -144,6 +144,7 @@ def finalize_metrics(raw):
         "dice": safe_divide(2 * intersection, gt_pixels + pred_pixels),
         "precision": safe_divide(tp, tp + fp),
         "recall": safe_divide(tp, tp + fn),
+        "f1": safe_divide(2 * tp, 2 * tp + fp + fn),
     }
 
 
@@ -257,7 +258,7 @@ def write_text_report(report, output_path):
     lines.append("Class metrics:")
     for class_name, metrics in report["class_metrics"].items():
         lines.append(
-            "- {class_name}: IoU={iou}, Dice={dice}, Precision={precision}, Recall={recall}".format(
+            "- {class_name}: IoU={iou}, Dice={dice}, Precision={precision}, Recall={recall}, F1={f1}".format(
                 class_name=class_name,
                 **metrics,
             )
