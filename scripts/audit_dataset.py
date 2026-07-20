@@ -242,7 +242,21 @@ def audit_item(image_path, dataset_dir, class_names):
         pixels_by_id = {}
 
     if instances:
-        metadata_id_set = {int(item["id"]) for item in instances}
+        metadata_ids = [int(item["id"]) for item in instances]
+        duplicate_metadata_ids = sorted(
+            instance_id
+            for instance_id, count in Counter(metadata_ids).items()
+            if count > 1
+        )
+        if duplicate_metadata_ids:
+            add_issue(
+                issues,
+                "error",
+                "duplicate_metadata_ids",
+                "info.yaml 中有重複的 instance ids。",
+                instance_ids=duplicate_metadata_ids,
+            )
+        metadata_id_set = set(metadata_ids)
         if mask_ids:
             missing_in_metadata = sorted(set(mask_ids) - metadata_id_set)
             missing_in_mask = sorted(metadata_id_set - set(mask_ids))

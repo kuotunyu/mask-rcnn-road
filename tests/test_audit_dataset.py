@@ -2,6 +2,8 @@
 import json
 from pathlib import Path
 
+import yaml
+
 from scripts.audit_dataset import audit_item, build_report
 from scripts.preprocess_labelme import process_json
 
@@ -94,3 +96,18 @@ def test_audit_reports_missing_mask(tmp_path):
     assert item["status"] == "error"
     assert report["error_image_count"] == 1
     assert any(issue["type"] == "missing_mask" for issue in item["issues"])
+
+
+def test_audit_reports_duplicate_metadata_ids(tmp_path):
+    dataset_dir = make_dataset(tmp_path)
+    image_path = dataset_dir / "pic" / "road.png"
+    info_path = dataset_dir / "labelme_json" / "road_json" / "info.yaml"
+
+    metadata = yaml.safe_load(info_path.read_text(encoding="utf-8"))
+    metadata["instances"][1]["id"] = metadata["instances"][0]["id"]
+    info_path.write_text(yaml.safe_dump(metadata, sort_keys=False), encoding="utf-8")
+
+    item = audit_item(image_path, dataset_dir, CLASS_NAMES)
+
+    assert item["status"] == "error"
+    assert any(issue["type"] == "duplicate_metadata_ids" for issue in item["issues"])
