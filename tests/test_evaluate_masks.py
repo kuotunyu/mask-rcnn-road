@@ -76,3 +76,4 @@ def test_evaluate_identical_datasets_has_perfect_overlap(tmp_path):
     assert report["mean_dice"] == 1.0
     assert report["class_metrics"]["pothole"]["iou"] == 1.0
     assert report["class_metrics"]["car"]["dice"] == 1.0
+    assert report["class_metrics"]["car"]["f1"] == 1.0
