@@ -1,0 +1,45 @@
+flowchart TD
+    subgraph Preparation["資料標註與轉換"]
+        direction TB
+        Labelme["Labelme JSON<br/>標註與來源影像"] --> Preprocess["scripts/preprocess_labelme.py<br/>將 shape 轉為 instance mask"]
+        Preprocess --> Dataset["Dataset layout<br/>pic/ + cv2_mask/ + labelme_json/"]
+        Preprocess --> Summary["preprocess_summary.json<br/>類別統計與 warnings"]
+    end
+
+    subgraph Quality["資料品質檢查"]
+        direction TB
+        Dataset --> Audit["scripts/audit_dataset.py<br/>檢查 image、mask 與 info.yaml"]
+        Audit --> AuditResult{"Audit 結果<br/>是否可接受？"}
+        AuditResult -->|否| Fix["修正標註或資料格式"]
+        Fix --> Retry["重新執行 preprocessing<br/>並再次進行 Audit"]
+        AuditResult -->|是| ProjectConfig["configs/road.yaml<br/>類別、切分與訓練設定"]
+    end
+
+    subgraph Training["模型訓練"]
+        direction TB
+        ProjectConfig --> Train["train.py<br/>建立 train / validation dataset"]
+        Train --> Schedule["四階段 fine-tuning<br/>heads、stage4+、all、fine"]
+        Schedule --> Weights[("logs1/<br/>checkpoints 與 .h5 weights")]
+    end
+
+    subgraph Application["推論與成果輸出"]
+        direction TB
+        Images["待分析道路影像"] --> Inference["myInference.py<br/>batch inference"]
+        Weights --> Inference
+        Inference --> Visuals["Overlay images<br/>mask + bbox + label + score"]
+        Inference --> Reports["results.csv + results.json<br/>偵測資訊與 mask area percentage"]
+        Visuals --> Dashboard["demo/index.html<br/>成果展示 dashboard"]
+        Reports --> Dashboard
+    end
+
+    classDef input fill:#FFF3BF,stroke:#E67700,stroke-width:2px,color:#5F3C00
+    classDef process fill:#D3F9D8,stroke:#2B8A3E,stroke-width:2px,color:#1B4332
+    classDef decision fill:#FFE8CC,stroke:#D9480F,stroke-width:2px,color:#7F2704
+    classDef artifact fill:#D0EBFF,stroke:#1971C2,stroke-width:2px,color:#0B3D66
+    classDef output fill:#E5DBFF,stroke:#6741D9,stroke-width:2px,color:#3B217A
+
+    class Labelme,Images input
+    class Preprocess,Audit,Fix,Retry,Train,Schedule,Inference process
+    class AuditResult decision
+    class Dataset,Summary,ProjectConfig,Weights artifact
+    class Visuals,Reports,Dashboard output
