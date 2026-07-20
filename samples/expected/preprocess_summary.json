@@ -1,0 +1,40 @@
+{
+  "input_dir": "samples/labelme_json",
+  "output_dir": "samples/expected",
+  "files": 1,
+  "total_instances": 4,
+  "class_names": [
+    "RoadLane",
+    "ShoulderLine",
+    "YellowLane",
+    "car",
+    "pothole"
+  ],
+  "class_counts": {
+    "RoadLane": 1,
+    "ShoulderLine": 0,
+    "YellowLane": 1,
+    "car": 1,
+    "pothole": 1
+  },
+  "skipped_unknown_labels": [],
+  "warnings": [],
+  "items": [
+    {
+      "json": "sample_road.json",
+      "image_width": 64,
+      "image_height": 48,
+      "instances": 4,
+      "mask_max_id": 4,
+      "mask_nonzero_pixels": 629,
+      "class_counts": {
+        "RoadLane": 1,
+        "YellowLane": 1,
+        "car": 1,
+        "pothole": 1
+      },
+      "skipped_unknown_labels": [],
+      "warnings": []
+    }
+  ]
+}

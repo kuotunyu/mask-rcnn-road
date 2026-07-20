@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mask R-CNN 道路結果展示</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #eef2f1;
+        --panel: #ffffff;
+        --panel-soft: #f7faf9;
+        --ink: #17211f;
+        --muted: #5f6f6b;
+        --line: #d6dfdc;
+        --line-strong: #aebeba;
+        --accent: #0f766e;
+        --accent-soft: #d9ebe8;
+        --road: #2f3634;
+        --pothole: #c2410c;
+        --car: #1d4ed8;
+        --lane: #b45309;
+        --mask: #059669;
+        --shadow: 0 20px 45px rgba(23, 33, 31, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        min-width: 320px;
+        overflow-x: hidden;
+      }
+
+      body {
+        margin: 0;
+        overflow-x: hidden;
+        background:
+          linear-gradient(90deg, rgba(15, 118, 110, 0.06) 1px, transparent 1px) 0 0 / 72px 72px,
+          linear-gradient(180deg, #f7faf9 0%, var(--bg) 72%);
+        color: var(--ink);
+        font-family: "Noto Sans TC", "Microsoft JhengHei", "Segoe UI", sans-serif;
+        line-height: 1.58;
+      }
+
+      .wrap {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+
+      .app-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-bottom: 1px solid rgba(174, 190, 186, 0.65);
+        background: rgba(255, 255, 255, 0.86);
+        backdrop-filter: blur(14px);
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 18px;
+        padding: 16px 0;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+        font-weight: 800;
+      }
+
+      .brand-mark {
+        width: 34px;
+        height: 34px;
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        background:
+          linear-gradient(135deg, transparent 0 38%, rgba(255, 255, 255, 0.74) 38% 45%, transparent 45%),
+          linear-gradient(135deg, var(--road), #151a19);
+        box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.08);
+        flex: 0 0 auto;
+      }
+
+      .brand span:last-child {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 7px 12px;
+        background: #ffffff;
+        color: var(--muted);
+        font-size: 13px;
+        white-space: nowrap;
+      }
+
+      .status::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--accent);
+        box-shadow: 0 0 0 4px var(--accent-soft);
+      }
+
+      main {
+        padding: 34px 0 46px;
+      }
+
+      .intro {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+        gap: 28px;
+        align-items: end;
+        margin-bottom: 24px;
+      }
+
+      .eyebrow {
+        margin: 0 0 10px;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        max-width: 780px;
+        font-size: clamp(28px, 4vw, 46px);
+        line-height: 1.16;
+        overflow-wrap: anywhere;
+      }
+
+      .intro p {
+        max-width: 740px;
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 16px;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
+      .snapshot {
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--accent);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: var(--shadow);
+        padding: 16px;
+      }
+
+      .snapshot-title {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      .snapshot dl {
+        display: grid;
+        gap: 9px;
+        margin: 12px 0 0;
+      }
+
+      .snapshot div {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 8px;
+      }
+
+      .snapshot div:last-child {
+        border-bottom: 0;
+        padding-bottom: 0;
+      }
+
+      dt {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      dd {
+        margin: 0;
+        color: var(--ink);
+        font-size: 13px;
+        font-weight: 800;
+        text-align: right;
+      }
+
+      .dashboard {
+        display: grid;
+        grid-template-columns: minmax(230px, 280px) minmax(0, 1fr);
+        gap: 20px;
+        align-items: start;
+      }
+
+      .side-panel {
+        display: grid;
+        gap: 14px;
+      }
+
+      .panel,
+      .image-card,
+      .metric,
+      .pipeline {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 14px 34px rgba(23, 33, 31, 0.08);
+      }
+
+      .panel {
+        padding: 16px;
+      }
+
+      .panel h2,
+      .pipeline h2 {
+        font-size: 17px;
+        line-height: 1.3;
+      }
+
+      .class-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .class-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .class-name {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--ink);
+        font-weight: 700;
+      }
+
+      .swatch {
+        width: 11px;
+        height: 11px;
+        border-radius: 3px;
+        background: var(--mask);
+      }
+
+      .swatch.yellow {
+        background: #eab308;
+      }
+
+      .swatch.shoulder {
+        background: #84cc16;
+      }
+
+      .swatch.car {
+        background: var(--car);
+      }
+
+      .swatch.pothole {
+        background: var(--pothole);
+      }
+
+      .metric-stack {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .mini-metric {
+        display: grid;
+        gap: 3px;
+        border-left: 3px solid var(--line-strong);
+        padding-left: 10px;
+      }
+
+      .mini-metric strong {
+        font-size: 22px;
+        line-height: 1.1;
+      }
+
+      .mini-metric span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .mini-metric.alert {
+        border-left-color: var(--pothole);
+      }
+
+      .stage {
+        min-width: 0;
+      }
+
+      .stage-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 18px;
+        margin-bottom: 12px;
+      }
+
+      .stage-header h2 {
+        font-size: 22px;
+        line-height: 1.25;
+      }
+
+      .frame-tag {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 6px 10px;
+        background: #ffffff;
+        color: var(--muted);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .gallery {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      .image-card {
+        margin: 0;
+        overflow: hidden;
+      }
+
+      .image-card header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+        border-bottom: 1px solid var(--line);
+        padding: 13px 15px;
+      }
+
+      .image-card h3 {
+        font-size: 15px;
+      }
+
+      .image-card header span {
+        color: var(--muted);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .image-frame {
+        position: relative;
+        background: #111816;
+      }
+
+      .image-card img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+      }
+
+      .image-frame::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+      }
+
+      figcaption {
+        border-top: 1px solid var(--line);
+        padding: 11px 15px 13px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin: 20px 0;
+      }
+
+      .metric {
+        position: relative;
+        overflow: hidden;
+        min-height: 106px;
+        padding: 16px;
+      }
+
+      .metric::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: var(--accent);
+      }
+
+      .metric.alert::before {
+        background: var(--pothole);
+      }
+
+      .metric .label {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .metric .value {
+        margin-top: 8px;
+        font-size: 30px;
+        font-weight: 900;
+        line-height: 1.05;
+      }
+
+      .metric .note {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .metric.alert .value {
+        color: var(--pothole);
+      }
+
+      .pipeline {
+        padding: 18px;
+      }
+
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .step {
+        min-height: 74px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 11px 10px;
+        background: var(--panel-soft);
+        color: var(--ink);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .step span {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      footer {
+        border-top: 1px solid var(--line);
+        padding: 18px 0 28px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      @media (max-width: 980px) {
+        .intro,
+        .dashboard {
+          grid-template-columns: 1fr;
+        }
+
+        .side-panel {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .wrap {
+          width: calc(100vw - 24px);
+          max-width: 1120px;
+        }
+
+        .topbar,
+        .stage-header {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .brand {
+          align-items: flex-start;
+        }
+
+        .brand span:last-child,
+        .image-card header span {
+          overflow: visible;
+          text-overflow: clip;
+          white-space: normal;
+        }
+
+        .title-en {
+          display: block;
+        }
+
+        .intro p {
+          max-width: 330px;
+          font-size: 15px;
+        }
+
+        .image-card header {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .side-panel,
+        .gallery,
+        .metrics,
+        .steps {
+          grid-template-columns: 1fr;
+        }
+
+        .snapshot div {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        dd {
+          text-align: left;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="wrap topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>Mask R-CNN 道路 Instance Segmentation</span>
+        </div>
+        <div class="status">結果展示</div>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="intro">
+        <div>
+          <div class="eyebrow">Mask R-CNN 結果檢視</div>
+          <h1>道路場景 <span class="title-en">Instance Segmentation</span> 結果展示</h1>
+          <p>
+            以 input / output 對照呈現道路影像的 Mask R-CNN 結果，並將 mask pixels 轉換為 pothole
+            與 car 的 area percentage，讓視覺化結果同時具備量化指標。
+          </p>
+        </div>
+        <aside class="snapshot" aria-label="專案摘要">
+          <div class="snapshot-title">專案摘要</div>
+          <dl>
+            <div>
+              <dt>任務</dt>
+              <dd>Instance Segmentation</dd>
+            </div>
+            <div>
+              <dt>模型</dt>
+              <dd>Mask R-CNN</dd>
+            </div>
+            <div>
+              <dt>Dataset 工具</dt>
+              <dd>Labelme + Audit</dd>
+            </div>
+          </dl>
+        </aside>
+      </section>
+
+      <section class="dashboard" aria-label="道路 Instance Segmentation 結果 dashboard">
+        <aside class="side-panel">
+          <section class="panel" aria-label="偵測類別圖例">
+            <div class="eyebrow">偵測類別</div>
+            <h2>類別圖例</h2>
+            <div class="class-list">
+              <div class="class-item">
+                <span class="class-name"><span class="swatch"></span>RoadLane</span>
+                <span>mask</span>
+              </div>
+              <div class="class-item">
+                <span class="class-name"><span class="swatch yellow"></span>YellowLane</span>
+                <span>mask</span>
+              </div>
+              <div class="class-item">
+                <span class="class-name"><span class="swatch shoulder"></span>ShoulderLine</span>
+                <span>mask</span>
+              </div>
+              <div class="class-item">
+                <span class="class-name"><span class="swatch car"></span>car</span>
+                <span>object</span>
+              </div>
+              <div class="class-item">
+                <span class="class-name"><span class="swatch pothole"></span>pothole</span>
+                <span>object</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-label="面積比例摘要">
+            <div class="eyebrow">Mask Area</div>
+            <h2>面積比例統計</h2>
+            <div class="metric-stack">
+              <div class="mini-metric alert">
+                <strong>3.855%</strong>
+                <span>pothole 面積比例</span>
+              </div>
+              <div class="mini-metric">
+                <strong>0.084%</strong>
+                <span>car 面積比例</span>
+              </div>
+            </div>
+          </section>
+        </aside>
+
+        <section class="stage" aria-label="input output 對照">
+          <div class="stage-header">
+            <div>
+              <div class="eyebrow">視覺對照</div>
+              <h2>Input frame 與 mask overlay</h2>
+            </div>
+            <div class="frame-tag">道路影像 1280 × 720</div>
+          </div>
+
+          <div class="gallery">
+            <figure class="image-card">
+              <header>
+                <h3>Input image</h3>
+                <span>原始影像</span>
+              </header>
+              <div class="image-frame">
+                <img src="../figure/img109.jpg" alt="道路 input image">
+              </div>
+              <figcaption>道路影像原圖，包含車道線、路面破損與遠方車輛。</figcaption>
+            </figure>
+
+            <figure class="image-card">
+              <header>
+                <h3>Inference output</h3>
+                <span>mask overlay</span>
+              </header>
+              <div class="image-frame">
+                <img src="../figure/output.jpg" alt="Mask R-CNN inference output">
+              </div>
+              <figcaption>輸出結果包含 instance mask、bounding box、class label 與 confidence score。</figcaption>
+            </figure>
+          </div>
+
+          <section class="metrics" aria-label="結果指標">
+            <div class="metric alert">
+              <div class="label">pothole 面積比例</div>
+              <div class="value">3.855%</div>
+              <div class="note">由 pothole mask pixels / image pixels 計算</div>
+            </div>
+            <div class="metric">
+              <div class="label">car 面積比例</div>
+              <div class="value">0.084%</div>
+              <div class="note">用於估計畫面中車輛占比</div>
+            </div>
+            <div class="metric">
+              <div class="label">偵測類別數</div>
+              <div class="value">5</div>
+              <div class="note">RoadLane, ShoulderLine, YellowLane, car, pothole</div>
+            </div>
+          </section>
+        </section>
+      </section>
+
+      <section class="pipeline" aria-label="專案流程">
+        <div class="eyebrow">流程</div>
+        <h2>專案流程</h2>
+        <div class="steps">
+          <div class="step"><span>01</span>Labelme JSON</div>
+          <div class="step"><span>02</span>Preprocessing 前處理</div>
+          <div class="step"><span>03</span>Dataset Audit</div>
+          <div class="step"><span>04</span>Mask R-CNN Inference</div>
+          <div class="step"><span>05</span>Mask Area 統計</div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        Mask R-CNN 道路 Instance Segmentation 結果檢視器。示意影像擷取自網路公開分享的行車記錄器影片，僅作研究與展示用途。
+      </div>
+    </footer>
+  </body>
+</html>

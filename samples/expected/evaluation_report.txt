@@ -1,0 +1,14 @@
+Mask Evaluation Summary
+=======================
+Ground truth: samples/expected
+Predictions: samples/expected
+Evaluated images: 1
+Mean IoU: 1.0
+Mean Dice: 1.0
+
+Class metrics:
+- RoadLane: IoU=1.0, Dice=1.0, Precision=1.0, Recall=1.0
+- ShoulderLine: IoU=None, Dice=None, Precision=None, Recall=None
+- YellowLane: IoU=1.0, Dice=1.0, Precision=1.0, Recall=1.0
+- car: IoU=1.0, Dice=1.0, Precision=1.0, Recall=1.0
+- pothole: IoU=1.0, Dice=1.0, Precision=1.0, Recall=1.0

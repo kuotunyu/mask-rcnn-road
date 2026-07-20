@@ -1,0 +1,11 @@
+numpy==1.18.5
+scipy==1.4.1
+Pillow==7.2.0
+Cython==0.29.21
+matplotlib==3.0.3
+scikit-image==0.15.0
+opencv-python==4.4.0.42
+h5py==2.10.0
+imgaug==0.4.0
+PyYAML==5.4.1
+IPython[all]

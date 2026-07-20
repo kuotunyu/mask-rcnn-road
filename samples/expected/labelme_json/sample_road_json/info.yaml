@@ -1,0 +1,22 @@
+label_names:
+- _background_
+- RoadLane
+- YellowLane
+- car
+- pothole
+image_path: samples/expected/pic/sample_road.png
+image_height: 48
+image_width: 64
+instances:
+- id: 1
+  label: RoadLane
+  raw_label: RoadLane
+- id: 2
+  label: YellowLane
+  raw_label: YellowLane
+- id: 3
+  label: car
+  raw_label: car
+- id: 4
+  label: pothole
+  raw_label: pothole
