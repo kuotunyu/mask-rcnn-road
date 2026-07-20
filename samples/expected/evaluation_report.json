@@ -1,0 +1,156 @@
+{
+  "ground_truth": "samples/expected",
+  "predictions": "samples/expected",
+  "classes": [
+    "RoadLane",
+    "ShoulderLine",
+    "YellowLane",
+    "car",
+    "pothole"
+  ],
+  "evaluated_images": 1,
+  "missing_predictions": [],
+  "extra_predictions": [],
+  "warnings": [],
+  "mean_iou": 1.0,
+  "mean_dice": 1.0,
+  "class_metrics": {
+    "RoadLane": {
+      "intersection": 162,
+      "union": 162,
+      "gt_pixels": 162,
+      "pred_pixels": 162,
+      "true_positive": 162,
+      "false_positive": 0,
+      "false_negative": 0,
+      "iou": 1.0,
+      "dice": 1.0,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "ShoulderLine": {
+      "intersection": 0,
+      "union": 0,
+      "gt_pixels": 0,
+      "pred_pixels": 0,
+      "true_positive": 0,
+      "false_positive": 0,
+      "false_negative": 0,
+      "iou": null,
+      "dice": null,
+      "precision": null,
+      "recall": null
+    },
+    "YellowLane": {
+      "intersection": 115,
+      "union": 115,
+      "gt_pixels": 115,
+      "pred_pixels": 115,
+      "true_positive": 115,
+      "false_positive": 0,
+      "false_negative": 0,
+      "iou": 1.0,
+      "dice": 1.0,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "car": {
+      "intersection": 255,
+      "union": 255,
+      "gt_pixels": 255,
+      "pred_pixels": 255,
+      "true_positive": 255,
+      "false_positive": 0,
+      "false_negative": 0,
+      "iou": 1.0,
+      "dice": 1.0,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "pothole": {
+      "intersection": 97,
+      "union": 97,
+      "gt_pixels": 97,
+      "pred_pixels": 97,
+      "true_positive": 97,
+      "false_positive": 0,
+      "false_negative": 0,
+      "iou": 1.0,
+      "dice": 1.0,
+      "precision": 1.0,
+      "recall": 1.0
+    }
+  },
+  "items": [
+    {
+      "stem": "sample_road",
+      "metrics": {
+        "RoadLane": {
+          "intersection": 162,
+          "union": 162,
+          "gt_pixels": 162,
+          "pred_pixels": 162,
+          "true_positive": 162,
+          "false_positive": 0,
+          "false_negative": 0,
+          "iou": 1.0,
+          "dice": 1.0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "ShoulderLine": {
+          "intersection": 0,
+          "union": 0,
+          "gt_pixels": 0,
+          "pred_pixels": 0,
+          "true_positive": 0,
+          "false_positive": 0,
+          "false_negative": 0,
+          "iou": null,
+          "dice": null,
+          "precision": null,
+          "recall": null
+        },
+        "YellowLane": {
+          "intersection": 115,
+          "union": 115,
+          "gt_pixels": 115,
+          "pred_pixels": 115,
+          "true_positive": 115,
+          "false_positive": 0,
+          "false_negative": 0,
+          "iou": 1.0,
+          "dice": 1.0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "car": {
+          "intersection": 255,
+          "union": 255,
+          "gt_pixels": 255,
+          "pred_pixels": 255,
+          "true_positive": 255,
+          "false_positive": 0,
+          "false_negative": 0,
+          "iou": 1.0,
+          "dice": 1.0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "pothole": {
+          "intersection": 97,
+          "union": 97,
+          "gt_pixels": 97,
+          "pred_pixels": 97,
+          "true_positive": 97,
+          "false_positive": 0,
+          "false_negative": 0,
+          "iou": 1.0,
+          "dice": 1.0,
+          "precision": 1.0,
+          "recall": 1.0
+        }
+      }
+    }
+  ]
+}

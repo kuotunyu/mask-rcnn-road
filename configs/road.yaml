@@ -1,0 +1,52 @@
+# Road Mask R-CNN project defaults.
+# CLI arguments can still override these values.
+
+dataset:
+  # 使用自己的 dataset 時，改這個 root，並確認底下有 pic/cv2_mask/labelme_json。
+  root: mydataset
+  classes:
+    - RoadLane
+    - ShoulderLine
+    - YellowLane
+    - car
+    - pothole
+  val_split: 0.2
+  seed: 42
+
+runtime:
+  gpu: true
+  gpu_id: "0"
+  gpu_count: 1
+  images_per_gpu: 4
+
+model:
+  name: road
+  image_min_dim: 320
+  image_max_dim: 384
+  # 對應舊實驗設定：(8*6, 16*6, 32*6, 64*6, 128*6)
+  rpn_anchor_scales: [48, 96, 192, 384, 768]
+  train_rois_per_image: 100
+
+training:
+  model_dir: logs1
+  init_with: last
+  weights:
+  coco_weights: mask_rcnn_coco.h5
+  steps_per_epoch: 64
+  validation_steps: 10
+  epochs_heads: 30
+  epochs_stage4: 60
+  epochs_all: 100
+  epochs_fine: 150
+  learning_rate:
+  no_augmentation: false
+
+inference:
+  weights: weights/road_mask_rcnn.h5
+  input_folder: images
+  output_folder: output_space
+  area_classes:
+    - pothole
+    - car
+  min_confidence:
+  verbose: 1

@@ -1,0 +1,25 @@
+Dataset Audit Summary
+======================
+Dataset: samples/expected
+Images: 1
+Valid images: 1
+Warning images: 0
+Error images: 0
+Total instances: 4
+
+Class counts:
+- RoadLane: 1
+- ShoulderLine: 0
+- YellowLane: 1
+- car: 1
+- pothole: 1
+
+Class mask pixels:
+- RoadLane: 162
+- ShoulderLine: 0
+- YellowLane: 115
+- car: 255
+- pothole: 97
+
+Issue counts:
+- none

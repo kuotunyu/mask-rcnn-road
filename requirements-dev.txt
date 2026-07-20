@@ -1,0 +1,7 @@
+# Demo scripts 與 pytest 使用的現代環境（Python 3.9+ 即可，不需要 TensorFlow）。
+# Training / inference 才需要 TF 1.15 legacy 環境，請改用
+# requirements.txt + requirements-legacy.txt（詳見 docs/environment.md）。
+numpy>=1.21
+Pillow>=9.0
+PyYAML>=6.0
+pytest>=7.0

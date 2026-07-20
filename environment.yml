@@ -1,0 +1,11 @@
+name: mask-rcnn-road
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.7
+  - pip=20.3
+  - setuptools<58
+  - wheel
+  - pip:
+      - -r requirements-legacy.txt

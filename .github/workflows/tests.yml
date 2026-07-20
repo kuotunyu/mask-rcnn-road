@@ -1,0 +1,37 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run tests
+        run: python -m pytest -q tests
+
+      - name: Mini demo smoke test (preprocess + audit)
+        run: |
+          python scripts/preprocess_labelme.py \
+            --input samples/labelme_json \
+            --output /tmp/demo_dataset \
+            --overwrite
+          python scripts/audit_dataset.py \
+            --dataset /tmp/demo_dataset \
+            --output /tmp/demo_dataset/audit_report.json \
+            --text-output /tmp/demo_dataset/audit_report.txt \
+            --preview-dir /tmp/demo_dataset/audit_previews \
+            --fail-on-warnings

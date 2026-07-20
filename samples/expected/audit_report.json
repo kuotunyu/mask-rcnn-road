@@ -1,0 +1,101 @@
+{
+  "dataset_dir": "samples/expected",
+  "class_names": [
+    "RoadLane",
+    "ShoulderLine",
+    "YellowLane",
+    "car",
+    "pothole"
+  ],
+  "image_count": 1,
+  "valid_image_count": 1,
+  "warning_image_count": 0,
+  "error_image_count": 0,
+  "total_instances": 4,
+  "class_counts": {
+    "RoadLane": 1,
+    "ShoulderLine": 0,
+    "YellowLane": 1,
+    "car": 1,
+    "pothole": 1
+  },
+  "class_pixels": {
+    "RoadLane": 162,
+    "ShoulderLine": 0,
+    "YellowLane": 115,
+    "car": 255,
+    "pothole": 97
+  },
+  "issue_counts": {},
+  "issues_by_severity": {},
+  "items": [
+    {
+      "image": "sample_road.png",
+      "stem": "sample_road",
+      "image_path": "samples/expected/pic/sample_road.png",
+      "mask_path": "samples/expected/cv2_mask/sample_road.png",
+      "info_path": "samples/expected/labelme_json/sample_road_json/info.yaml",
+      "status": "ok",
+      "image_size": [
+        64,
+        48
+      ],
+      "mask_size": [
+        64,
+        48
+      ],
+      "mask_ids": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "metadata_ids": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "instance_count": 4,
+      "class_counts": {
+        "RoadLane": 1,
+        "YellowLane": 1,
+        "car": 1,
+        "pothole": 1
+      },
+      "class_pixels": {
+        "RoadLane": 162,
+        "YellowLane": 115,
+        "car": 255,
+        "pothole": 97
+      },
+      "instances": [
+        {
+          "id": 1,
+          "label": "RoadLane",
+          "raw_label": "RoadLane",
+          "mask_pixels": 162
+        },
+        {
+          "id": 2,
+          "label": "YellowLane",
+          "raw_label": "YellowLane",
+          "mask_pixels": 115
+        },
+        {
+          "id": 3,
+          "label": "car",
+          "raw_label": "car",
+          "mask_pixels": 255
+        },
+        {
+          "id": 4,
+          "label": "pothole",
+          "raw_label": "pothole",
+          "mask_pixels": 97
+        }
+      ],
+      "issues": []
+    }
+  ]
+}

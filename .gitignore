@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# Local interview/private notes
+INTERVIEW_CHEATSHEET.md
+
+# Environment
+.venv/
+venv/
+env/
+*.egg-info/
+build/
+dist/
+
+# Model and training artifacts
+*.h5
+*.hdf5
+*.ckpt
+*.pb
+mask_rcnn_coco.h5
+weights/
+logs/
+logs*/
+
+# Datasets and generated predictions
+samples/output/
+mydataset/
+images/
+output_space/
+outputs/
+data/
+datasets/
+reports/
+results.csv
+results.json
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+.env
+.ipynb_checkpoints/
+.claude/
