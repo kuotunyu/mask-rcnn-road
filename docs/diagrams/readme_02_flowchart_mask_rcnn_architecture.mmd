@@ -1,0 +1,44 @@
+flowchart TD
+    subgraph FeatureStage["特徵擷取"]
+        direction TB
+        Input["輸入道路影像<br/>RGB image"] --> Backbone["ResNet-101 Backbone<br/>C2 至 C5 feature maps"]
+        Backbone --> FPN["Feature Pyramid Network<br/>P2 至 P6 multi-scale features"]
+    end
+
+    subgraph ProposalStage["Region Proposal"]
+        direction TB
+        RPN["Region Proposal Network<br/>anchor classification + bbox regression"]
+        RPN --> Proposals["ProposalLayer<br/>NMS 與 candidate ROIs"]
+    end
+
+    FPN --> RPN
+
+    subgraph DetectionStage["分類與邊界框"]
+        direction TB
+        Proposals --> ClassROI["PyramidROIAlign<br/>擷取 classification features"]
+        FPN --> ClassROI
+        ClassROI --> ClassHead["Classifier / BBox Head<br/>class probabilities + refined boxes"]
+        ClassHead --> Detections["DetectionLayer<br/>篩選與 NMS"]
+    end
+
+    subgraph MaskStage["Instance Mask"]
+        direction TB
+        Detections --> MaskROI["PyramidROIAlign<br/>擷取 mask features"]
+        FPN --> MaskROI
+        MaskROI --> MaskHead["Mask Head<br/>每個 ROI 的 binary mask"]
+    end
+
+    Detections --> Output["Instance Segmentation 輸出<br/>bbox + class + score + mask"]
+    MaskHead --> Output
+
+    classDef input fill:#FFF3BF,stroke:#E67700,stroke-width:2px,color:#5F3C00
+    classDef feature fill:#D3F9D8,stroke:#2B8A3E,stroke-width:2px,color:#1B4332
+    classDef proposal fill:#FFE8CC,stroke:#D9480F,stroke-width:2px,color:#7F2704
+    classDef head fill:#D0EBFF,stroke:#1971C2,stroke-width:2px,color:#0B3D66
+    classDef output fill:#E5DBFF,stroke:#6741D9,stroke-width:2px,color:#3B217A
+
+    class Input input
+    class Backbone,FPN feature
+    class RPN,Proposals proposal
+    class ClassROI,ClassHead,Detections,MaskROI,MaskHead head
+    class Output output

@@ -28,6 +28,26 @@ CI badge 就會顯示：
 - **Web demo dashboard**：以結果展示 dashboard 呈現 input/output 對照、類別圖例與量化指標。
 - **Evaluation script**：提供 IoU、Dice、Precision、Recall 等 pixel-level metrics 的基礎評估工具。
 
+## 系統架構
+
+本節將專案拆成端到端工作流程與 Mask R-CNN 模型架構，分別說明資料如何從 Labelme 標註流向訓練與推論，以及模型如何產生 class、bounding box 與 instance mask。
+
+### 端到端工作流程
+
+流程從 Labelme JSON 開始，先建立 Matterport Mask R-CNN 所需的 dataset layout，再經 Dataset Audit、四階段 fine-tuning 與 batch inference，最後輸出視覺化影像及結構化統計資料。
+
+![Mask R-CNN Road 端到端工作流程](docs/diagrams/readme_01_flowchart_project_workflow.png)
+
+[檢視 Mermaid 原始檔](docs/diagrams/readme_01_flowchart_project_workflow.mmd)
+
+### Mask R-CNN 模型架構
+
+模型以 ResNet-101 與 Feature Pyramid Network 擷取多尺度特徵，由 Region Proposal Network 產生候選區域，再透過分類／邊界框與 Mask 兩條分支輸出 instance segmentation 結果。
+
+![Mask R-CNN 模型架構](docs/diagrams/readme_02_flowchart_mask_rcnn_architecture.png)
+
+[檢視 Mermaid 原始檔](docs/diagrams/readme_02_flowchart_mask_rcnn_architecture.mmd)
+
 ## 快速開始 Quick Start
 
 若只是想快速瀏覽成果，可以直接用瀏覽器開啟：
@@ -79,18 +99,6 @@ python -m pytest -q tests
 | 偵測每個 object 的類別與 bounding box，重點是「在哪裡」。 | 對每個 pixel 指派 class label，同類別區域會被視為同一群。 | 同時保留 pixel-level mask 與 individual instances，能區分同類別的不同物件。 |
 
 在道路場景中，instance segmentation 可以同時輸出 `RoadLane`、`YellowLane`、`car`、`pothole` 等物件的 mask、bounding box 與 confidence score。本專案進一步利用 mask pixels 計算 `pothole` 與 `car` 的畫面占比，作為道路狀態量化指標。
-
-## 專案流程
-
-```text
-Labelme JSON
-  -> scripts/preprocess_labelme.py
-  -> mydataset/pic + mydataset/cv2_mask + mydataset/labelme_json
-  -> train.py
-  -> trained .h5 weights
-  -> myInference.py
-  -> overlay images + results.csv + results.json
-```
 
 ## 專案結構 Repository Structure
 
