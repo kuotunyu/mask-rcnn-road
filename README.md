@@ -36,7 +36,11 @@ CI badge 就會顯示：
 
 流程從 Labelme JSON 開始，先建立 Matterport Mask R-CNN 所需的 dataset layout，再經 Dataset Audit、四階段 fine-tuning 與 batch inference，最後輸出視覺化影像及結構化統計資料。
 
-![Mask R-CNN Road 端到端工作流程](docs/diagrams/readme_01_flowchart_project_workflow.png)
+<p align="center">
+  <a href="docs/diagrams/readme_01_flowchart_project_workflow.png">
+    <img src="docs/diagrams/readme_01_flowchart_project_workflow.png" alt="Mask R-CNN Road 端到端工作流程" width="560">
+  </a>
+</p>
 
 [檢視 Mermaid 原始檔](docs/diagrams/readme_01_flowchart_project_workflow.mmd)
 
@@ -44,7 +48,11 @@ CI badge 就會顯示：
 
 模型以 ResNet-101 與 Feature Pyramid Network 擷取多尺度特徵，由 Region Proposal Network 產生候選區域，再透過分類／邊界框與 Mask 兩條分支輸出 instance segmentation 結果。
 
-![Mask R-CNN 模型架構](docs/diagrams/readme_02_flowchart_mask_rcnn_architecture.png)
+<p align="center">
+  <a href="docs/diagrams/readme_02_flowchart_mask_rcnn_architecture.png">
+    <img src="docs/diagrams/readme_02_flowchart_mask_rcnn_architecture.png" alt="Mask R-CNN 模型架構" width="520">
+  </a>
+</p>
 
 [檢視 Mermaid 原始檔](docs/diagrams/readme_02_flowchart_mask_rcnn_architecture.mmd)
 
