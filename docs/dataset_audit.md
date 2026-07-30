@@ -73,7 +73,7 @@ Committed 的範例輸出位於：
 - `samples/expected/audit_report.txt`
 - `samples/expected/audit_previews/sample_road_preview.png`
 
-## 面試說法
+## 技術重點
 
 可以這樣說明：
 

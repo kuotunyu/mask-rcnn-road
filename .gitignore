@@ -4,8 +4,8 @@ __pycache__/
 *.pyo
 .pytest_cache/
 
-# Local interview/private notes
-INTERVIEW_CHEATSHEET.md
+# Local private notes
+NOTES_PRIVATE.md
 
 # Environment
 .venv/
