@@ -26,8 +26,8 @@
 ### 1. 端到端工作流程
 
 ```mermaid
-%%{init: {'themeVariables': {'fontSize': '18px'}}}%%
-flowchart LR
+%%{init: {'themeVariables': {'fontSize': '20px'}}}%%
+flowchart TD
     subgraph Stage1 ["階段一：資料標註與稽核"]
         direction LR
         S1["Labelme JSON 標註"] --> S2["preprocess_labelme.py<br/>轉檔為 Mask Layout"] --> S3["audit_dataset.py<br/>格式與一致性稽核"]
