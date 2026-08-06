@@ -6,6 +6,9 @@ __pycache__/
 
 # Local private notes
 NOTES_PRIVATE.md
+interview*.md
+INTERVIEW_PREP.md
+*.private.md
 
 # Environment
 .venv/
@@ -14,6 +17,7 @@ env/
 *.egg-info/
 build/
 dist/
+requirements-legacy.txt
 
 # Model and training artifacts
 *.h5
@@ -45,4 +49,10 @@ Thumbs.db
 
 .env
 .ipynb_checkpoints/
+
+# Local AI-tool configuration
 .claude/
+.agents/
+CLAUDE.md
+PLAN.md
+PROGRESS.md

@@ -1,319 +1,187 @@
-# Mask R-CNN Road Instance Segmentation
+# mask-rcnn-road
 
-<!-- Push 上 GitHub 後，把下面這行取消註解，並將 USERNAME 換成你的 GitHub 帳號，
-CI badge 就會顯示：
+[![CI](https://github.com/kuotunyu/mask-rcnn-road/actions/workflows/tests.yml/badge.svg)](https://github.com/kuotunyu/mask-rcnn-road/actions/workflows/tests.yml)
+![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python&logoColor=white)
+![TensorFlow](https://img.shields.io/badge/TensorFlow-1.15.0-orange?logo=tensorflow&logoColor=white)
+![Tests](https://img.shields.io/badge/Tests-passing-success)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-![tests](https://github.com/USERNAME/Mask_RCNN-road/actions/workflows/tests.yml/badge.svg)
--->
+本專案為基於 Mask R-CNN (ResNet-101 + FPN) 之道路場景實例分割 (Instance Segmentation) 系統：針對包含車道線 (`RoadLane`)、路肩線 (`ShoulderLine`)、黃虛線 (`YellowLane`)、車輛 (`car`) 與坑洞 (`pothole`) 進行 5 類別物件與 Mask 分割。系統提供 Labelme 標註轉換、Dataset 格式稽核、四階段 Fine-tuning 訓練、批次推論、Mask 面積比例量化統計與 Web Dashboard 展示。
 
-這是一個以 TensorFlow 1.x / Keras 2.x 版本的 Mask R-CNN 為基礎，針對道路場景進行 instance segmentation 的 legacy 專案。流程從 Labelme 標註資料開始，經過資料前處理、Mask R-CNN 訓練、batch inference，最後輸出視覺化結果與各類別 mask 面積比例統計。
+---
 
-偵測類別：
+## 技術亮點
 
-- `RoadLane`
-- `ShoulderLine`
-- `YellowLane`
-- `car`
-- `pothole`
+1. **Labelme 標註轉檔與 Dataset 稽核工具**：
+   提供腳本將 Labelme JSON 轉為 Matterport Mask R-CNN 標準 dataset layout，並具備自動稽核工具 (Audit Tool) 檢查空 Mask、尺寸不符與標註缺漏。
+2. **組態驅動 (YAML Config) 四階段訓練**：
+   使用 `configs/road.yaml` 集中管理參數，採用 heads ➔ ResNet stage 4+ ➔ all layers ➔ fine-tuning 四階段學習率調控。
+3. **面積比例量化統計與 Web Dashboard**：
+   批次推論自動輸出 overlay 視覺圖、`results.csv` 與 `results.json`，計算坑洞與車輛之像素畫面佔比，並提供 HTML 互動式展示面板。
 
-![Road instance segmentation result](figure/output.jpg)
+---
 
-## 專案亮點 Project Highlights
+## 系統架構與 Pipeline
 
-- **Labelme preprocessing pipeline**：將 Labelme JSON 轉成 Matterport Mask R-CNN 可讀取的 dataset layout。
-- **Dataset audit tool**：在 training 前檢查 image、mask、`info.yaml` 是否一致，降低資料格式錯誤造成的訓練問題。
-- **Config-driven workflow**：使用 `configs/road.yaml` 集中管理 dataset、training、inference 重要設定。
-- **Batch inference output**：輸出 overlay image、`results.csv`、`results.json`，方便後續分析與展示。
-- **Mask area statistics**：根據 mask pixels 計算 `pothole`、`car` 等 class 的畫面占比。
-- **Web demo dashboard**：以結果展示 dashboard 呈現 input/output 對照、類別圖例與量化指標。
-- **Evaluation script**：提供 IoU、Dice、Precision、Recall 等 pixel-level metrics 的基礎評估工具。
+### 1. 端到端工作流程
 
-## 系統架構
+```mermaid
+%%{init: {'themeVariables': {'fontSize': '20px'}}}%%
+flowchart TD
+    subgraph Preparation ["1. 資料標註與轉換"]
+        Labelme["Labelme JSON<br/>標註與來源影像"] --> Preprocess["scripts/preprocess_labelme.py<br/>轉為 instance mask layout"]
+        Preprocess --> Dataset["Dataset layout<br/>(pic/ + cv2_mask/ + info.yaml)"]
+        Preprocess --> Summary["preprocess_summary.json<br/>類別統計與 warnings"]
+    end
 
-本節將專案拆成端到端工作流程與 Mask R-CNN 模型架構，分別說明資料如何從 Labelme 標註流向訓練與推論，以及模型如何產生 class、bounding box 與 instance mask。
+    subgraph Quality ["2. 資料品質檢查 (Audit)"]
+        Dataset --> Audit["scripts/audit_dataset.py<br/>檢查 image、mask 與 info.yaml"]
+        Audit --> AuditResult{"Audit 結果<br/>是否通過？"}
+        AuditResult -->|否| Fix["修正標註或格式"] --> Retry["重新 Preprocessing"]
+        AuditResult -->|是| ProjectConfig["configs/road.yaml<br/>類別與訓練設定"]
+    end
 
-### 端到端工作流程
+    subgraph Training ["3. 模型訓練"]
+        ProjectConfig --> Train["train.py<br/>建立 train / val dataset"]
+        Train --> Schedule["四階段 fine-tuning<br/>(heads ➔ stage4+ ➔ all ➔ fine)"]
+        Schedule --> Weights[("logs1/<br/>checkpoints 與 .h5 權重")]
+    end
 
-流程從 Labelme JSON 開始，先建立 Matterport Mask R-CNN 所需的 dataset layout，再經 Dataset Audit、四階段 fine-tuning 與 batch inference，最後輸出視覺化影像及結構化統計資料。
+    subgraph Application ["4. 推論與成果輸出"]
+        Images["待分析道路影像"] & Weights --> Inference["myInference.py<br/>batch inference"]
+        Inference --> Visuals["Overlay images<br/>(mask + bbox + label + score)"]
+        Inference --> Reports["results.csv + results.json<br/>偵測資訊與 mask area percentage"]
+        Visuals & Reports --> Dashboard["demo/index.html<br/>成果展示 dashboard"]
+    end
 
-<p align="center">
-  <a href="docs/diagrams/readme_01_flowchart_project_workflow.png">
-    <img src="docs/diagrams/readme_01_flowchart_project_workflow.png" alt="Mask R-CNN Road 端到端工作流程" width="560">
-  </a>
-</p>
+    classDef prepStyle fill:#fff9db,stroke:#f59f00,stroke-width:2px,color:#212529
+    classDef qualStyle fill:#FFE8CC,stroke:#D9480F,stroke-width:2px,color:#212529
+    classDef trainStyle fill:#e7f5ff,stroke:#1971c2,stroke-width:2px,color:#212529
+    classDef appStyle fill:#e6fcf5,stroke:#0ca678,stroke-width:2px,color:#212529
 
-[檢視 Mermaid 原始檔](docs/diagrams/readme_01_flowchart_project_workflow.mmd)
-
-### Mask R-CNN 模型架構
-
-模型以 ResNet-101 與 Feature Pyramid Network 擷取多尺度特徵，由 Region Proposal Network 產生候選區域，再透過分類／邊界框與 Mask 兩條分支輸出 instance segmentation 結果。
-
-<p align="center">
-  <a href="docs/diagrams/readme_02_flowchart_mask_rcnn_architecture.png">
-    <img src="docs/diagrams/readme_02_flowchart_mask_rcnn_architecture.png" alt="Mask R-CNN 模型架構" width="520">
-  </a>
-</p>
-
-[檢視 Mermaid 原始檔](docs/diagrams/readme_02_flowchart_mask_rcnn_architecture.mmd)
-
-## 快速開始 Quick Start
-
-若只是想快速瀏覽成果，可以直接用瀏覽器開啟：
-
-```text
-demo/index.html
+    class Preparation,Labelme,Preprocess,Dataset,Summary prepStyle
+    class Quality,Audit,AuditResult,Fix,Retry,ProjectConfig qualStyle
+    class Training,Train,Schedule,Weights trainStyle
+    class Application,Images,Inference,Visuals,Reports,Dashboard appStyle
 ```
 
-若想驗證公開 sample pipeline，可以先安裝 dev dependencies。這組 dependencies 只需要一般的 Python 3.9+ 環境，不需要安裝 TensorFlow，也不需要 legacy 環境：
+### 2. Mask R-CNN 模型架構
+
+```mermaid
+%%{init: {'themeVariables': {'fontSize': '20px'}}}%%
+flowchart TD
+    subgraph FeatureStage ["1. 多尺度特徵擷取"]
+        Input["輸入道路影像<br/>(RGB Image)"] --> Backbone["ResNet-101 Backbone<br/>(C2 至 C5 特徵圖)"]
+        Backbone --> FPN["Feature Pyramid Network<br/>(P2 至 P6 特徵金字塔)"]
+    end
+
+    subgraph ProposalStage ["2. Region Proposal"]
+        FPN --> RPN["Region Proposal Network<br/>(Anchor 分類與 BBox 回歸)"]
+        RPN --> Proposals["ProposalLayer<br/>(NMS 與候選 ROIs)"]
+    end
+
+    subgraph DetectionStage ["3. 分類與邊界框"]
+        Proposals & FPN --> ClassROI["PyramidROIAlign<br/>擷取分類特徵"]
+        ClassROI --> ClassHead["Classifier / BBox Head<br/>(類別機率與修正框)"]
+        ClassHead --> Detections["DetectionLayer<br/>篩選與 NMS"]
+    end
+
+    subgraph MaskStage ["4. Instance Mask"]
+        Detections & FPN --> MaskROI["PyramidROIAlign<br/>擷取 Mask 特徵"]
+        MaskROI --> MaskHead["Mask Head<br/>(獨立 FCN 二值化 Mask)"]
+    end
+
+    Detections & MaskHead --> Output["Instance Segmentation 輸出<br/>(bbox + class + score + mask)"]
+
+    classDef featStyle fill:#e7f5ff,stroke:#1971c2,stroke-width:2px,color:#212529
+    classDef propStyle fill:#fff9db,stroke:#f59f00,stroke-width:2px,color:#212529
+    classDef headStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#212529
+    classDef outStyle fill:#e6fcf5,stroke:#0ca678,stroke-width:2px,color:#212529
+
+    class FeatureStage,Input,Backbone,FPN featStyle
+    class ProposalStage,RPN,Proposals propStyle
+    class DetectionStage,ClassROI,ClassHead,Detections,MaskStage,MaskROI,MaskHead headStyle
+    class Output outStyle
+```
+
+---
+
+## 成果展示與 Demo
+
+### 1. 道路實例分割結果
+
+![道路實例分割成果](figure/output.jpg)
+
+### 2. 成果展示 Web Dashboard (`demo/index.html`)
+
+![Web Demo 展示頁面](figure/web_demo.png)
+
+---
+
+## CV 任務概念分析
+
+| Object Detection (物件偵測) | Semantic Segmentation (語意分割) | Instance Segmentation (實例分割 - 本專案) |
+|:---:|:---:|:---:|
+| <img src="figure/mrcnn01.png" alt="Object Detection" width="260"> | <img src="figure/mrcnn02.png" alt="Semantic Segmentation" width="260"> | <img src="figure/mrcnn03.png" alt="Instance Segmentation" width="260"> |
+| 僅標出物件的類別與 Bounding Box 邊界。 | 對每個 Pixel 標註類別，無法區分同類別的不同實體。 | **同時保留 Pixel 邊界與獨立實體個體，精確區分同類別不同物件**。 |
+
+---
+
+## 物件偵測類別
+
+| 類別標籤 (Class Label) | 物件說明 |
+|---|---|
+| `RoadLane` | 車道線 |
+| `ShoulderLine` | 路肩線 |
+| `YellowLane` | 黃虛線 / 雙黃線 |
+| `car` | 車輛實體 |
+| `pothole` | 路面坑洞 |
+
+---
+
+## 快速開始
+
+### 1. 安裝環境套件
 
 ```bash
+# 開發與測試環境 (無 TensorFlow 需求)
 pip install -r requirements-dev.txt
-```
 
-執行 Labelme preprocessing mini demo：
+# 執行 Labelme 前處理 Demo
+python scripts/preprocess_labelme.py --input samples/labelme_json --output samples/output --overwrite
 
-```bash
-python scripts/preprocess_labelme.py \
-  --input samples/labelme_json \
-  --output samples/output \
-  --overwrite
-```
+# 執行 Dataset 稽核
+python scripts/audit_dataset.py --dataset samples/output --output samples/output/audit_report.json
 
-執行 Dataset audit：
-
-```bash
-python scripts/audit_dataset.py \
-  --dataset samples/output \
-  --output samples/output/audit_report.json \
-  --text-output samples/output/audit_report.txt \
-  --preview-dir samples/output/audit_previews
-```
-
-`samples/output/` 不會進入 Git；產生的結果可以和 repo 內 committed 的 [samples/expected/](samples/expected) 對照——除了 metadata 內記錄的輸出路徑外，內容應該完全一致。
-
-執行 tests：
-
-```bash
+# 執行單元測試 (pytest)
 python -m pytest -q tests
 ```
 
-## CV 任務概念 CV Task Primer
-
-在進入道路場景前，先用一組簡化示意圖說明三種常見 computer vision tasks 的差異。本專案採用的是第三種：instance segmentation。
-
-| Object Detection | Semantic Segmentation | Instance Segmentation |
-|---|---|---|
-| <img src="figure/mrcnn01.png" alt="Object Detection example" width="240"> | <img src="figure/mrcnn02.png" alt="Semantic Segmentation example" width="240"> | <img src="figure/mrcnn03.png" alt="Instance Segmentation example" width="240"> |
-| 偵測每個 object 的類別與 bounding box，重點是「在哪裡」。 | 對每個 pixel 指派 class label，同類別區域會被視為同一群。 | 同時保留 pixel-level mask 與 individual instances，能區分同類別的不同物件。 |
-
-在道路場景中，instance segmentation 可以同時輸出 `RoadLane`、`YellowLane`、`car`、`pothole` 等物件的 mask、bounding box 與 confidence score。本專案進一步利用 mask pixels 計算 `pothole` 與 `car` 的畫面占比，作為道路狀態量化指標。
-
-## 專案結構 Repository Structure
-
-```text
-.github/workflows/        # CI：pytest 與 mini demo smoke test
-configs/                  # YAML 設定檔，集中管理 dataset / training / inference 參數
-demo/                     # Web demo dashboard
-docs/                     # Dataset、environment、results、evaluation 等補充文件
-figure/                   # README 與 demo 使用的展示圖片
-mrcnn/                    # Matterport Mask R-CNN core implementation
-samples/                  # 可公開的 mini demo sample dataset 與預期輸出
-scripts/                  # preprocessing、dataset audit、evaluation tools
-tests/                    # preprocessing / audit / evaluation 的 pytest tests
-train.py                  # Mask R-CNN training entry point
-myInference.py            # batch inference 與 mask area statistics entry point
-```
-
-## 環境設定
-
-本專案分成兩種環境：
-
-- **Demo / tests 環境**：preprocessing、dataset audit、evaluation scripts 與 pytest 只需要 Python 3.9+ 加 `requirements-dev.txt`，不需要 TensorFlow。
-- **Training / inference 環境**：`train.py` 與 `myInference.py` 對應 TensorFlow 1.15 時期的技術棧，建議使用獨立的 Conda environment，並固定在 Python 3.6 或 3.7。
+### 2. 批次推論與面積統計
 
 ```bash
-conda env create -f environment.yml
-conda activate mask-rcnn-road
-pip install -e .
+python myInference.py --weights weights/road_mask_rcnn.h5 --input-folder images --output-folder output_space
 ```
 
-如果沒有 TensorFlow 1.15 GPU 環境，可以將 `requirements-legacy.txt` 中的 `tensorflow-gpu==1.15.0` 改成 `tensorflow==1.15.0`。
+導出之 `results.csv` 與 `results.json` 將包含每張影像之坑洞 (`pothole_area_pct`) 與車輛 (`car_area_pct`) 像素畫面佔比。
 
-詳細環境說明請見 [docs/environment.md](docs/environment.md)。
+---
 
-## Dataset 前處理
+## 專案結構
 
-先使用 Labelme 標註影像，再將 Labelme JSON 轉成訓練程式需要的 dataset layout：
+| 檔案 / 目錄 | 功能說明與職責 |
+|---|---|
+| `configs/road.yaml` | 全域組態設定 (類別、切分與訓練參數) |
+| `train.py` | Mask R-CNN 訓練入口 (四階段 Fine-tuning) |
+| `myInference.py` | 批次推論與 Mask 面積比例量化統計 |
+| `mrcnn/` | Matterport Mask R-CNN 核心套件實作 |
+| `scripts/preprocess_labelme.py` | Labelme JSON 轉檔腳本 |
+| `scripts/audit_dataset.py` | Dataset 格式與一致性自動化稽核工具 |
+| `scripts/evaluate_masks.py` | Pixel-level 評估工具 (IoU, Dice, Precision, Recall) |
+| `demo/index.html` | 成果展示 Web Dashboard |
 
-```bash
-python scripts/preprocess_labelme.py \
-  --input data/labelme_json \
-  --output mydataset \
-  --overwrite
-```
+---
 
-輸出結構：
+## 授權與聲明
 
-```text
-mydataset/
-  pic/
-  cv2_mask/
-  labelme_json/
-```
-
-每個 `cv2_mask/*.png` 都是 single-channel instance mask。像素值 `0` 代表 background，`1..N` 代表不同 instance；對應的 `info.yaml` 會記錄每個 instance id 的 class label。
-
-完整 dataset 格式請見 [docs/dataset.md](docs/dataset.md)。
-
-## Mini Demo
-
-如果沒有原始 private dataset，可以先跑內建的 mini demo 驗證 preprocessing pipeline：
-
-```bash
-python scripts/preprocess_labelme.py \
-  --input samples/labelme_json \
-  --output samples/output \
-  --overwrite
-```
-
-這會產生 `samples/output/preprocess_summary.json`，並輸出 class counts、warnings、mask 是否有效等檢查結果。`samples/expected/` 保存同一份 demo 的預期輸出，可以直接對照驗證。
-
-## Dataset Audit 檢查
-
-在 training 前，可以先檢查 `mydataset/` 的 image、mask、`info.yaml` 是否一致：
-
-```bash
-python scripts/audit_dataset.py \
-  --dataset mydataset \
-  --output reports/dataset_audit.json \
-  --text-output reports/dataset_audit.txt \
-  --preview-dir reports/previews
-```
-
-Audit tool 會檢查空 mask、尺寸不一致、instance ids 對不上、未知 labels，並統計每個 class 的 instance 數量與 mask pixels。詳細說明請見 [docs/dataset_audit.md](docs/dataset_audit.md)。
-
-## 設定檔 Configuration
-
-常用設定集中在 `configs/road.yaml`，training / inference CLI 仍可覆寫 YAML 內的值：
-
-```bash
-python train.py --config configs/road.yaml
-python myInference.py --config configs/road.yaml
-```
-
-設定說明請見 [docs/configuration.md](docs/configuration.md)。
-
-## Model Card 模型卡
-
-專案目的、input/output、dataset/weights 限制、known limitations 與 future work 請見 [docs/model_card.md](docs/model_card.md)。
-
-## 訓練 Training
-
-從最新 checkpoint 繼續訓練：
-
-```bash
-python train.py --dataset mydataset --init-with last
-```
-
-從 COCO weights 開始 transfer learning：
-
-```bash
-python train.py \
-  --dataset mydataset \
-  --init-with coco \
-  --coco-weights mask_rcnn_coco.h5
-```
-
-預設 training schedule 保留原本的四階段訓練策略：
-
-- heads：epoch 0 到 30
-- ResNet stage 4+：epoch 30 到 60
-- all layers：epoch 60 到 100
-- all layers fine-tuning：epoch 100 到 150
-
-可以用 CLI 覆寫 epoch 設定：
-
-```bash
-python train.py \
-  --dataset mydataset \
-  --init-with coco \
-  --epochs-heads 10 \
-  --epochs-stage4 20 \
-  --epochs-all 40 \
-  --epochs-fine 60
-```
-
-訓練產生的 logs 與 checkpoints 預設會寫入 `logs1/`。
-
-## 推論 Inference
-
-執行 batch inference 並輸出面積比例統計：
-
-```bash
-python myInference.py \
-  --weights weights/road_mask_rcnn.h5 \
-  --input-folder images \
-  --output-folder output_space
-```
-
-Inference script 會輸出：
-
-- 疊加 mask、bounding box、label、score 的 overlay images
-- `results.csv`
-- `results.json`
-
-CSV/JSON 會記錄每張影像的 detection metadata 與 class-wise mask area percentage。預設追蹤：
-
-- `pothole_area_pct`
-- `car_area_pct`
-
-也可以指定要計算面積比例的 classes：
-
-```bash
-python myInference.py \
-  --weights weights/road_mask_rcnn.h5 \
-  --input-folder images \
-  --output-folder output_space \
-  --area-classes pothole car RoadLane
-```
-
-Inference output schema 請見 [docs/results.md](docs/results.md)。
-
-## 結果展示 Web Demo
-
-`demo/index.html` 提供一個結果展示 dashboard，可用來呈現 input/output 對照、類別圖例、mask overlay 與 mask area statistics。說明請見 [demo/README.md](demo/README.md)。
-
-![Web demo screenshot](figure/web_demo.png)
-
-## 評估 Evaluation
-
-若未來有 prediction masks，可以使用 `scripts/evaluate_masks.py` 比較 ground truth / prediction masks，輸出 IoU、Dice、Precision、Recall。詳細說明請見 [docs/evaluation.md](docs/evaluation.md)。
-
-## 測試 Testing
-
-Tests 只依賴 `requirements-dev.txt`，在一般 Python 3.9+ 環境即可執行，不需要 TensorFlow。GitHub Actions 會在每次 push 時自動跑 pytest 與 mini demo smoke test。
-
-```bash
-pip install -r requirements-dev.txt
-python -m pytest -q tests
-```
-
-如果本機 pytest plugin 載入過慢或互相干擾，可以暫時關閉 plugin autoload：
-
-```powershell
-$env:PYTEST_DISABLE_PLUGIN_AUTOLOAD='1'
-python -m pytest -q tests
-```
-
-## 注意事項
-
-Dataset、trained weights、logs、generated predictions 通常檔案較大，也可能包含私人資料，因此不放入 Git。
-
-`mrcnn/` package 基於 Matterport Mask R-CNN 實作，保留 MIT License 與原始來源註記。
-
-README 與 demo 使用的道路示意影像（`figure/img109.jpg`、`figure/output.jpg`）擷取自網路上公開分享的行車記錄器影片，僅作為研究與成果展示用途，不屬於本專案的訓練資料發佈。若您是原始影片作者且希望移除，請開 issue 聯絡。
-
-## 參考資料 References
-
-- Matterport Mask R-CNN: https://github.com/matterport/Mask_RCNN
-- He, K., Gkioxari, G., Dollar, P., and Girshick, R. Mask R-CNN. ICCV 2017.
+本專案之程式碼採 [MIT License](LICENSE)。`mrcnn/` 套件基於 Matterport Mask R-CNN 實作並保留原始聲明。
