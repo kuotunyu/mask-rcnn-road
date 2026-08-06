@@ -10,7 +10,7 @@
 
 ---
 
-## 技術亮點
+## 系統設計與關鍵特性
 
 1. **Labelme 標註轉檔與 Dataset 稽核工具**：
    提供腳本將 Labelme JSON 轉為 Matterport Mask R-CNN 標準 dataset layout，並具備自動稽核工具 (Audit Tool) 檢查空 Mask、尺寸不符與標註缺漏。
@@ -26,49 +26,28 @@
 ### 1. 端到端工作流程
 
 ```mermaid
-%%{init: {'themeVariables': {'fontSize': '20px'}}}%%
-flowchart TD
-    subgraph Preparation ["1. 資料標註與轉換"]
-        Labelme["Labelme JSON<br/>標註與來源影像"] --> Preprocess["scripts/preprocess_labelme.py<br/>轉為 instance mask layout"]
-        Preprocess --> Dataset["Dataset layout<br/>(pic/ + cv2_mask/ + info.yaml)"]
-        Preprocess --> Summary["preprocess_summary.json<br/>類別統計與 warnings"]
+%%{init: {'themeVariables': {'fontSize': '18px'}}}%%
+flowchart LR
+    subgraph Stage1 ["階段一：資料標註與稽核"]
+        direction LR
+        S1["Labelme JSON 標註"] --> S2["preprocess_labelme.py<br/>轉檔為 Mask Layout"] --> S3["audit_dataset.py<br/>格式與一致性稽核"]
     end
 
-    subgraph Quality ["2. 資料品質檢查 (Audit)"]
-        Dataset --> Audit["scripts/audit_dataset.py<br/>檢查 image、mask 與 info.yaml"]
-        Audit --> AuditResult{"Audit 結果<br/>是否通過？"}
-        AuditResult -->|否| Fix["修正標註或格式"] --> Retry["重新 Preprocessing"]
-        AuditResult -->|是| ProjectConfig["configs/road.yaml<br/>類別與訓練設定"]
+    subgraph Stage2 ["階段二：模型訓練與推論"]
+        direction LR
+        S4["train.py<br/>四階段 Fine-tuning"] --> S5["myInference.py<br/>Batch 推論與面積統計"] --> S6["demo/index.html<br/>Web 展示 Dashboard"]
     end
 
-    subgraph Training ["3. 模型訓練"]
-        ProjectConfig --> Train["train.py<br/>建立 train / val dataset"]
-        Train --> Schedule["四階段 fine-tuning<br/>(heads ➔ stage4+ ➔ all ➔ fine)"]
-        Schedule --> Weights[("logs1/<br/>checkpoints 與 .h5 權重")]
-    end
+    Stage1 --> Stage2
 
-    subgraph Application ["4. 推論與成果輸出"]
-        Images["待分析道路影像"] & Weights --> Inference["myInference.py<br/>batch inference"]
-        Inference --> Visuals["Overlay images<br/>(mask + bbox + label + score)"]
-        Inference --> Reports["results.csv + results.json<br/>偵測資訊與 mask area percentage"]
-        Visuals & Reports --> Dashboard["demo/index.html<br/>成果展示 dashboard"]
-    end
-
-    classDef prepStyle fill:#fff9db,stroke:#f59f00,stroke-width:2px,color:#212529
-    classDef qualStyle fill:#FFE8CC,stroke:#D9480F,stroke-width:2px,color:#212529
-    classDef trainStyle fill:#e7f5ff,stroke:#1971c2,stroke-width:2px,color:#212529
-    classDef appStyle fill:#e6fcf5,stroke:#0ca678,stroke-width:2px,color:#212529
-
-    class Preparation,Labelme,Preprocess,Dataset,Summary prepStyle
-    class Quality,Audit,AuditResult,Fix,Retry,ProjectConfig qualStyle
-    class Training,Train,Schedule,Weights trainStyle
-    class Application,Images,Inference,Visuals,Reports,Dashboard appStyle
+    classDef stageStyle fill:#e7f5ff,stroke:#1971c2,stroke-width:2px,color:#212529
+    class S1,S2,S3,S4,S5,S6 stageStyle
 ```
 
 ### 2. Mask R-CNN 模型架構
 
 ```mermaid
-%%{init: {'themeVariables': {'fontSize': '20px'}}}%%
+%%{init: {'themeVariables': {'fontSize': '18px'}}}%%
 flowchart TD
     subgraph FeatureStage ["1. 多尺度特徵擷取"]
         Input["輸入道路影像<br/>(RGB Image)"] --> Backbone["ResNet-101 Backbone<br/>(C2 至 C5 特徵圖)"]
