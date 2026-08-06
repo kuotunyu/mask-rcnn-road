@@ -46,42 +46,11 @@ flowchart LR
 
 ### 2. Mask R-CNN 模型架構
 
-```mermaid
-%%{init: {'themeVariables': {'fontSize': '18px'}}}%%
-flowchart TD
-    subgraph FeatureStage ["1. 多尺度特徵擷取"]
-        Input["輸入道路影像<br/>(RGB Image)"] --> Backbone["ResNet-101 Backbone<br/>(C2 至 C5 特徵圖)"]
-        Backbone --> FPN["Feature Pyramid Network<br/>(P2 至 P6 特徵金字塔)"]
-    end
+<p align="center">
+  <img src="figure/mask_rcnn_paper_architecture.png" alt="Mask R-CNN 模型架構圖" width="680">
+</p>
 
-    subgraph ProposalStage ["2. Region Proposal"]
-        FPN --> RPN["Region Proposal Network<br/>(Anchor 分類與 BBox 回歸)"]
-        RPN --> Proposals["ProposalLayer<br/>(NMS 與候選 ROIs)"]
-    end
-
-    subgraph DetectionStage ["3. 分類與邊界框"]
-        Proposals & FPN --> ClassROI["PyramidROIAlign<br/>擷取分類特徵"]
-        ClassROI --> ClassHead["Classifier / BBox Head<br/>(類別機率與修正框)"]
-        ClassHead --> Detections["DetectionLayer<br/>篩選與 NMS"]
-    end
-
-    subgraph MaskStage ["4. Instance Mask"]
-        Detections & FPN --> MaskROI["PyramidROIAlign<br/>擷取 Mask 特徵"]
-        MaskROI --> MaskHead["Mask Head<br/>(獨立 FCN 二值化 Mask)"]
-    end
-
-    Detections & MaskHead --> Output["Instance Segmentation 輸出<br/>(bbox + class + score + mask)"]
-
-    classDef featStyle fill:#e7f5ff,stroke:#1971c2,stroke-width:2px,color:#212529
-    classDef propStyle fill:#fff9db,stroke:#f59f00,stroke-width:2px,color:#212529
-    classDef headStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#212529
-    classDef outStyle fill:#e6fcf5,stroke:#0ca678,stroke-width:2px,color:#099268
-
-    class FeatureStage,Input,Backbone,FPN featStyle
-    class ProposalStage,RPN,Proposals propStyle
-    class DetectionStage,ClassROI,ClassHead,Detections,MaskStage,MaskROI,MaskHead headStyle
-    class Output outStyle
-```
+> **圖源與文獻引用**：He, K., Gkioxari, G., Dollár, P., & Girshick, R. (2017). Mask R-CNN. In *Proceedings of the IEEE International Conference on Computer Vision (ICCV)*, pp. 2961-2969. (arXiv:1703.06870)
 
 ---
 
