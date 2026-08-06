@@ -47,8 +47,10 @@ flowchart LR
 ### 2. Mask R-CNN 模型架構
 
 <p align="center">
-  <img src="docs/diagrams/readme_02_flowchart_mask_rcnn_architecture.png" alt="Mask R-CNN 模型架構" width="520">
+  <img src="figure/mask_rcnn_paper_architecture.png" alt="Mask R-CNN 原論文模型架構" width="680">
 </p>
+
+> **圖源與文獻引用**：He, K., Gkioxari, G., Dollár, P., & Girshick, R. (2017). Mask R-CNN. In *Proceedings of the IEEE International Conference on Computer Vision (ICCV)*, pp. 2961-2969.
 
 ---
 
