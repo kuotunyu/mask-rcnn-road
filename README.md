@@ -26,22 +26,27 @@
 ### 1. 端到端工作流程
 
 ```mermaid
-%%{init: {'themeVariables': {'fontSize': '20px'}}}%%
+%%{init: {'themeVariables': {'fontSize': '18px'}}}%%
 flowchart TD
     subgraph Stage1 ["階段一：資料標註與稽核"]
         direction LR
-        S1["Labelme JSON 標註"] --> S2["preprocess_labelme.py<br/>轉檔為 Mask Layout"] --> S3["audit_dataset.py<br/>格式與一致性稽核"]
+        S1[("Labelme JSON 標註")] --> S2["preprocess_labelme.py<br/>(轉檔為 Mask Layout)"] --> S3["audit_dataset.py<br/>(格式與一致性稽核)"]
     end
 
     subgraph Stage2 ["階段二：模型訓練與推論"]
         direction LR
-        S4["train.py<br/>四階段 Fine-tuning"] --> S5["myInference.py<br/>Batch 推論與面積統計"] --> S6["demo/index.html<br/>Web 展示 Dashboard"]
+        S4["train.py 訓練<br/>(四階段 Fine-tuning)"] --> S5["myInference.py<br/>(Batch 推論與面積統計)"] --> S6(["demo/index.html<br/>(Web 展示 Dashboard)"])
     end
 
     Stage1 --> Stage2
 
+    classDef prepStyle fill:#fff9db,stroke:#f59f00,stroke-width:2px,color:#212529
     classDef stageStyle fill:#e7f5ff,stroke:#1971c2,stroke-width:2px,color:#212529
-    class S1,S2,S3,S4,S5,S6 stageStyle
+    class S1,S2,S3 prepStyle
+    class S4,S5,S6 stageStyle
+
+    style Stage1 fill:#fffcf0,stroke:#f59f00,stroke-width:2px,stroke-dasharray: 4 4
+    style Stage2 fill:#f8f9fa,stroke:#1971c2,stroke-width:2px,stroke-dasharray: 4 4
 ```
 
 ### 2. Mask R-CNN 模型架構
